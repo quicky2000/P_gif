@@ -16,5 +16,16 @@ mkdir gif_player
 cd gif_player
 generate_makefile gif_player
 make
+
+# Subtrees
+#----------
+git@github.com:quicky2000/quicky_tools.git
+git@github.com:quicky2000/parameter_manager.git
+git@github.com:quicky2000/lib_gif.git
+git@github.com:quicky2000/gif_player.git
+git@github.com:quicky2000/simple_gui.git
+git@github.com:quicky2000/quicky_exception.git
+git@github.com:quicky2000/quicky_utils.git
+
 #EOF
 
