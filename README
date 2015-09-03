@@ -3,6 +3,18 @@
 #-------------------------------------------------------------------------------
 
 P_gif is the integration repository of my experiments around GIF format
- 
+
+#- Setup project
+#----------------
+. setup.sh
+
+#- Build project
+#----------------
+mkdir build
+cd build
+mkdir gif_player
+cd gif_player
+generate_makefile gif_player
+make
 #EOF
 
