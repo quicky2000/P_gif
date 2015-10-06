@@ -34,6 +34,12 @@ namespace lib_gif
   class gif_image: public gif_graphic_rendering_block
   {
   public:
+    inline gif_image(const uint16_t & p_image_width,
+                     const uint16_t & p_image_height);
+    inline gif_image(const uint16_t & p_image_width,
+                     const uint16_t & p_image_height,
+		     const uint16_t & p_image_left_position,
+		     const uint16_t & p_image_top_position);
     inline gif_image(std::ifstream & p_file);
     inline ~gif_image(void);
     inline const uint16_t & get_image_left_position(void)const;
@@ -45,6 +51,7 @@ namespace lib_gif
     inline const gif_color_table & get_local_color_table(void)const;
     inline bool is_image(void)const;
     inline const unsigned int & get_color_index(const unsigned int & p_x, const unsigned int & p_y)const;
+    inline void set_color_index(const unsigned int & p_x, const unsigned int & p_y,const unsigned int & p_index);
     inline void print(std::ostream & p_stream)const;
     inline unsigned int deinterlace(const unsigned int & p_y)const;
     inline void write(std::ofstream & p_file)const;
@@ -56,6 +63,25 @@ namespace lib_gif
     t_content * m_content;
   };
   //----------------------------------------------------------------------------
+  gif_image::gif_image(const uint16_t & p_image_width,
+                       const uint16_t & p_image_height):
+    gif_image(p_image_width,p_image_height,0,0)
+  {
+  }
+
+  //----------------------------------------------------------------------------
+  gif_image::gif_image(const uint16_t & p_image_width,
+		       const uint16_t & p_image_height,
+		       const uint16_t & p_image_left_position,
+		       const uint16_t & p_image_top_position):
+    m_descriptor(p_image_width,p_image_height,p_image_left_position,p_image_top_position),
+    m_color_table(nullptr),
+    m_lzw_minimum_code_size(8),
+    m_content(new t_content[m_descriptor.get_image_width() * m_descriptor.get_image_height()])
+  {
+  }
+
+   //----------------------------------------------------------------------------
   void gif_image::write(std::ofstream & p_file)const
   {
     uint8_t l_image_introducer = 0x2C;
@@ -75,7 +101,7 @@ namespace lib_gif
     // 12 bits max per coded value
     // l_content + 2 = l_content + clear code + end of information code
     // * 2 to be sure to have place for clean code
-    quicky_utils::quicky_bitfield l_compressed_data(2 * (l_content_size + 2) * 12);
+    quicky_utils::quicky_bitfield<uint64_t> l_compressed_data(2 * (l_content_size + 2) * 12);
 
     // Add clear code first
     unsigned int l_coded_value = l_encoder.get_clear_code();
@@ -184,7 +210,7 @@ namespace lib_gif
 	std::cout << "Number of Data bytes in sub blocks : " << l_compressed_data_size << std::endl ;
 #endif // DEBUG_GIF_IMAGE
         m_content = new t_content[m_descriptor.get_image_width() * m_descriptor.get_image_height()];
-        quicky_utils::quicky_bitfield l_bitfield(l_compressed_data_size*8);
+        quicky_utils::quicky_bitfield<uint64_t> l_bitfield(l_compressed_data_size*8);
         unsigned int l_first_code = 0;
         for(unsigned int l_index = 0 ; l_index < l_compressed_data_size ; ++l_index)
           {
@@ -311,9 +337,28 @@ namespace lib_gif
         std::stringstream l_width_stream;
         l_width_stream << get_image_width();
         std::stringstream l_height_stream;
-        l_height_stream << get_image_height();        
-        throw quicky_exception::quicky_logic_exception("Requested coordinates ("+l_x_stream.str()+","+l_y_stream.str()+" are outside of picture dimensions ("+l_width_stream.str()+","+l_height_stream.str()+")",__LINE__,__FILE__);
+        l_height_stream << get_image_height();
+        throw quicky_exception::quicky_logic_exception("Requested coordinates ("+l_x_stream.str()+","+l_y_stream.str()+" of index to get are outside of picture dimensions ("+l_width_stream.str()+","+l_height_stream.str()+")",__LINE__,__FILE__);
       }
+
+    //--------------------------------------------------------------------------
+    void gif_image::set_color_index(const unsigned int & p_x, const unsigned int & p_y,const unsigned int & p_index)
+    {
+        if(p_x < get_image_width() && p_y < get_image_height())
+          {
+            m_content[p_x + p_y * get_image_width()] = p_index;
+            return;
+          }
+        std::stringstream l_x_stream;
+        l_x_stream << p_x;
+        std::stringstream l_y_stream;
+        l_y_stream << p_y;
+        std::stringstream l_width_stream;
+        l_width_stream << get_image_width();
+        std::stringstream l_height_stream;
+        l_height_stream << get_image_height();
+        throw quicky_exception::quicky_logic_exception("Requested coordinates ("+l_x_stream.str()+","+l_y_stream.str()+" og index to set are outside of picture dimensions ("+l_width_stream.str()+","+l_height_stream.str()+")",__LINE__,__FILE__);
+    } 
 
     //--------------------------------------------------------------------------
     unsigned int gif_image::deinterlace(const unsigned int & p_y)const
